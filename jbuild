@@ -1,0 +1,7 @@
+(executable
+ ((name test)
+  )
+)
+
+
+(jbuild_version 1)
