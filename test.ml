@@ -1,11 +1,5 @@
 open Reactivecaml
 open OUnit2
-let x = return 2
-
-let y = map x (fun x -> x+1)
-
-
-let z = map2 x y (fun x y -> x+y)
 
 let x0 = return 7
 let x1 = return 8
