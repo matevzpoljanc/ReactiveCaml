@@ -1,0 +1,9 @@
+language: c
+script: bash -ex .travis-ci.sh
+sudo: required
+notifications:
+  email:
+    recipients:
+      - mp775@cam.ac.uk
+    on_success: never # default: change
+    on_failure: always # default: always
