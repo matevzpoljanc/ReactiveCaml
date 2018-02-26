@@ -1,4 +1,4 @@
-open Reactivecaml2
+open Reactivecaml
 let x = return 2
 
 let y = map x (fun x -> x+1)
