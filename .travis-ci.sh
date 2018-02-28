@@ -1,6 +1,6 @@
 
 # Edit this for your own project dependencies
-OPAM_DEPENDS="jbuilder ounit core"
+OPAM_DEPENDS="opam-installer jbuilder ounit core"
 	 
 # echo "yes" | sudo add-apt-repository ppa:avsm/ppa
 
@@ -20,6 +20,4 @@ eval `opam config env`
 
 #ocamlfind list
 
-make
-
-_build/default/test.exe
+make testAll
