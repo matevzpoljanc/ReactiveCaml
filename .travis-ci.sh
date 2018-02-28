@@ -1,6 +1,6 @@
 
 # Edit this for your own project dependencies
-OPAM_DEPENDS="jbuilder ounit"
+OPAM_DEPENDS="jbuilder ounit core"
 	 
 # echo "yes" | sudo add-apt-repository ppa:avsm/ppa
 

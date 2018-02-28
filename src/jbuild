@@ -1,0 +1,7 @@
+(library
+ ((name reactiveCaml)
+  (public_name reactiveCaml)
+))
+
+
+(jbuild_version 1)
