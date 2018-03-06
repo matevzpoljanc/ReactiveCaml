@@ -11,7 +11,8 @@ let sum3 = map3 x0 x1 x2 (fun x y z -> x + y + z)
 let sum2 = map2 x3 x4 (fun x y -> x + y)
 let result = map2 sum2 sum3 ~f:(fun x y -> x*y)
 let print_int_t t = print_endline @@ string_of_int @@ read_exn @@ t
-
+let list_sum = let l = [x0; x1; x2; x3; x4] in
+    unordered_list_fold ~f:(+) ~f_inv:(-) ~init:(return 0) l
 let test_init () = set_value x0 7; set_value x1 8; set_value x2 9; set_value x3 1; set_value x4 2
 
 let test_sum3 test_ctx = assert_equal 24 (read_exn sum3)
@@ -19,7 +20,12 @@ let test_sum2 test_ctx = assert_equal 3 (read_exn sum2)
 let test_result tect_ctx = assert_equal (24*3) (read_exn result)
 let test_changex0 test_ctx = set_value x0 4; assert_equal (21,63) ((read_exn sum3), read_exn result)
 let test_changex3 test_ctx = set_value x3 5; assert_equal (7, 21*7) (read_exn sum2, read_exn result)
-
+let test_list_fold test_ctx = test_init (); assert_equal (7+8+9+1+2) (read_exn list_sum)
+let test_list_fold_chngX0 test_ctx = test_init (); set_value x0 0; assert_equal (8+9+1+2) (read_exn list_sum)
+let test_list_fold_chngX1 test_ctx = test_init (); set_value x1 213; assert_equal (7+213+9+1+2) (read_exn list_sum)
+let test_list_fold_chngX2 test_ctx = test_init (); set_value x2 120; assert_equal (7+8+120+1+2) (read_exn list_sum)
+let test_list_fold_chngX3 test_ctx = test_init (); set_value x3 (-78); assert_equal (7+8+9-78+2) (read_exn list_sum)
+let test_list_fold_chngX4 test_ctx = test_init (); set_value x4 (-4); assert_equal (7+8+9+1-4) (read_exn list_sum)
 let suite = 
     "suite" >:::
     [
@@ -27,7 +33,13 @@ let suite =
         "test_sum2" >:: test_sum2;
         "test_result" >:: test_result;
         "test_changex0" >:: test_changex0;
-        "test_changex3" >:: test_changex3
+        "test_changex3" >:: test_changex3;
+        "test_list_fold" >:: test_list_fold;
+        "test_list_fold_chngX0" >:: test_list_fold_chngX0;
+        "test_list_fold_chngX1" >:: test_list_fold_chngX1;
+        "test_list_fold_chngX2" >:: test_list_fold_chngX2;
+        "test_list_fold_chngX3" >:: test_list_fold_chngX3;
+        "test_list_fold_chngX4" >:: test_list_fold_chngX4
     ]
 
 let benchmark_function ~f ~args =
