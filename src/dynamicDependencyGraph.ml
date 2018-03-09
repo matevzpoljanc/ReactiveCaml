@@ -1,5 +1,13 @@
 (** In this library ddg is represented with nodes which are connected via dependency relation. Each node is of a certain kind which is either
 Variable or Map. Variable is used to store changable values and Map is used to perform computation on Values.  *)
+type 'a node_value = 
+    | Value of 'a
+    | Err of exn
+
+let unpack_node_value nv = match nv with
+    | Value v -> v
+    | Err e -> raise e
+
 module rec Kind : sig 
     type 'a t =
     | Variable of 'a
@@ -9,8 +17,8 @@ module rec Kind : sig
     | Map4: ('a0 -> 'a1 -> 'a2 -> 'a3 -> 'a) * 'a0 Node.t * 'a1 Node.t * 'a2 Node.t * 'a3 Node.t -> 'a t
     | Unordered_list_fold: ('a -> 'a0 -> 'a) * ('a -> 'a0 -> 'a) * 'a Node.t * ('a0 Node.t list) -> 'a t
     
-    val value: 'a t -> 'a
-    val value_list_fold: 'a t -> old_node:'b -> new_node:'b -> old_result:'a -> 'a
+    val value: 'a t -> 'a node_value
+    val value_list_fold: 'a t -> old_node:'b -> new_node:'b -> old_result:'a -> 'a node_value
 
 end = struct
     type 'a t =
@@ -24,22 +32,22 @@ end = struct
     (** Function is called whenever node recomputes *)
     let value t =
         match t with
-        | Variable v -> v
-        | Map (f, n1) -> f @@ Node.read_exn n1
-        | Map2 (f, n1, n2) -> f (Node.read_exn n1) (Node.read_exn n2)
-        | Map3 (f, n1, n2, n3) -> f (Node.read_exn n1) (Node.read_exn n2) (Node.read_exn n3)
-        | Map4 (f, n1, n2, n3, n4) -> f (Node.read_exn n1) (Node.read_exn n2) (Node.read_exn n3) (Node.read_exn n4)
-        | Unordered_list_fold (f, f_inv, init, l) -> List.fold_left f (Node.read_exn init) @@ List.map (Node.read_exn) l
+        | Variable v -> Value v
+        | Map (f, n1) -> (try Value (f @@ Node.read_exn n1) with e -> Err e)
+        | Map2 (f, n1, n2) -> (try Value (f (Node.read_exn n1) (Node.read_exn n2)) with e -> Err e)
+        | Map3 (f, n1, n2, n3) -> (try Value (f (Node.read_exn n1) (Node.read_exn n2) (Node.read_exn n3)) with e -> Err e)
+        | Map4 (f, n1, n2, n3, n4) -> (try Value (f (Node.read_exn n1) (Node.read_exn n2) (Node.read_exn n3) (Node.read_exn n4)) with e -> Err e)
+        | Unordered_list_fold (f, f_inv, init, l) -> (try Value (List.fold_left f (Node.read_exn init) @@ List.map (Node.read_exn) l) with e -> Err e)
     
     exception NodeNotListFold
     let value_list_fold t ~old_node ~new_node ~old_result =
         match t with
-        | Unordered_list_fold (f, f_inv, _, _) -> f (f_inv old_result (Obj.magic old_node)) (Obj.magic new_node)
+        | Unordered_list_fold (f, f_inv, _, _) -> (try Value (f (f_inv old_result (Obj.magic old_node)) (Obj.magic new_node)) with e -> Err e)
         | _ -> raise NodeNotListFold
 end
 and Node: sig 
     type 'a t = {
-        mutable value : 'a option;
+        mutable value : 'a node_value option;
         mutable kind: 'a Kind.t;
         mutable dependencies: ('a * 'a -> unit) list
     }
@@ -52,7 +60,7 @@ and Node: sig
     val recompute_fold: 'a t -> old: 'b -> new_v: 'b -> unit
 end = struct 
      type 'a t = {
-        mutable value : 'a option;
+        mutable value : 'a node_value option;
         mutable kind: 'a Kind.t;
         mutable dependencies: ('a * 'a -> unit) list
     }
@@ -63,7 +71,9 @@ end = struct
         dependencies = []
     }
     (** Read node's value *)
-    let read t = t.value
+    let read t = match t.value with
+        | Some nv -> Some (unpack_node_value nv)
+        | None -> None 
 
     exception EmptyNode
     (** Read node's value. If value is None then raise EmptyNode exception *)
@@ -74,8 +84,8 @@ end = struct
     (** Update value of the node. If node is of kind Variable then also update value of Kind *)
     let update_value t r =
         match t.kind with
-        | Variable _ -> t.kind <- Variable r; t.value <- Some r
-        | _ -> t.value <- Some r
+        | Variable _ -> t.kind <- Variable r; t.value <- Some (Value r)
+        | _ -> t.value <- Some (Value r)
     (** Write new value into node. If node's value actually change then call recompute on all of it's dependencies *)
     let write t v = 
         let old_value = read_exn t in
@@ -87,10 +97,10 @@ end = struct
     let add_dependency t dep = t.dependencies <- dep::t.dependencies
     (** Function used to recompute and update current node's value *)
     let recompute t =
-        write t @@ Kind.value t.kind
+        write t @@ unpack_node_value @@ Kind.value t.kind
 
     let recompute_fold t ~old ~new_v = 
-        write t @@ Kind.value_list_fold t.kind ~old_node:old ~new_node:new_v ~old_result:(read_exn t)
+        write t @@ unpack_node_value @@ Kind.value_list_fold t.kind ~old_node:old ~new_node:new_v ~old_result:(read_exn t)
 
 end
 type 'a t = 'a Node.t

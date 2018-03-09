@@ -26,6 +26,12 @@ let test_list_fold_chngX1 test_ctx = test_init (); set_value x1 213; assert_equa
 let test_list_fold_chngX2 test_ctx = test_init (); set_value x2 120; assert_equal (7+8+120+1+2) (read_exn list_sum)
 let test_list_fold_chngX3 test_ctx = test_init (); set_value x3 (-78); assert_equal (7+8+9-78+2) (read_exn list_sum)
 let test_list_fold_chngX4 test_ctx = test_init (); set_value x4 (-4); assert_equal (7+8+9+1-4) (read_exn list_sum)
+let test_divison_by_zero_error text_ctx = let x = make_variable 0 in ignore @@ map x (fun x -> 100/x) ; assert_bool "Divison by zero" true
+
+let test_divide_by_if_not_zero text_ctx = 
+    let x = make_variable 0 in 
+    let n0 = map x (fun x -> 100/x) in
+    assert_equal 0 @@ read_exn @@ map x (fun x -> if x = 0 then 0 else read_exn n0) 
 let suite = 
     "suite" >:::
     [
@@ -39,7 +45,9 @@ let suite =
         "test_list_fold_chngX1" >:: test_list_fold_chngX1;
         "test_list_fold_chngX2" >:: test_list_fold_chngX2;
         "test_list_fold_chngX3" >:: test_list_fold_chngX3;
-        "test_list_fold_chngX4" >:: test_list_fold_chngX4
+        "test_list_fold_chngX4" >:: test_list_fold_chngX4;
+        "test_divison_by_zero_error" >:: test_divison_by_zero_error;
+        "test_divide_by_if_not_zero " >:: test_divide_by_if_not_zero 
     ]
 
 let benchmark_function ~f ~args =
