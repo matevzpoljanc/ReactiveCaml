@@ -12,4 +12,6 @@ val map2: 'a t -> 'b t -> f:('a -> 'b -> 'c) -> 'c t
 val map3: 'a t -> 'b t -> 'c t -> f:('a -> 'b -> 'c -> 'd) -> 'd t
 val map4: 'a t -> 'b t -> 'c t -> 'd t -> f:('a -> 'b -> 'c -> 'd -> 'e) -> 'e t
 
+val bind: 'a t -> f:('a -> 'b t) -> 'b t
+
 val unordered_list_fold: f:('a -> 'b -> 'a) -> f_inv:('a -> 'b -> 'a) -> init:('a t) -> (('b t) list) -> 'a t

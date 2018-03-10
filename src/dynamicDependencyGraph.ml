@@ -58,6 +58,7 @@ and Node: sig
     val add_dependency: 'a t -> ('a * 'a -> unit) -> unit
     val recompute: 'a t -> unit
     val recompute_fold: 'a t -> old: 'b -> new_v: 'b -> unit
+    val update_entire_node: 'a t -> 'a t -> unit
 end = struct 
      type 'a t = {
         mutable value : 'a node_value option;
@@ -70,6 +71,7 @@ end = struct
         kind;
         dependencies = []
     }
+
     (** Read node's value *)
     let read t = match t.value with
         | Some nv -> Some (unpack_node_value nv)
@@ -92,6 +94,8 @@ end = struct
         if old_value != v then
             update_value t v;
             List.iter (fun f -> f (old_value, v)) t.dependencies
+    let update_entire_node t0 t1 =
+        t0.value <- t1.value; t0.kind <- t1.kind 
 
     (** Add new dependency for a node. Dependency is a function which when called recomputes some other node *)
     let add_dependency t dep = t.dependencies <- dep::t.dependencies
@@ -123,12 +127,22 @@ let map n1 ~f =
     Node.add_dependency n1 (fun x1 -> Node.recompute b);
     b
 
+let bind n1 ~f =
+    let b = f @@ read_exn n1 in
+    Node.add_dependency n1 (fun x -> let b1 = f @@ read_exn n1 in Node.update_entire_node b b1);
+    b
 (** Map two argument function over two nodes *)
 let map2 n1 n2 ~f = 
     let c = Node.create (Kind.Map2 (f, n1, n2)) () in
     Node.add_dependency n1 (fun x1 -> Node.recompute c);
     Node.add_dependency n2 (fun x2 -> Node.recompute c);
     c
+
+let bind2 n1 n2 ~f =
+    let b = f (read_exn n1) (read_exn n2) in
+    Node.add_dependency n1 (fun x -> let b1 = f (read_exn n1) (read_exn n2) in Node.update_entire_node b b1);
+    Node.add_dependency n2 (fun x -> let b1 = f (read_exn n1) (read_exn n2) in Node.update_entire_node b b1);
+    b
 
 (** Map three argument function over three nodes *)
 let map3 n1 n2 n3 ~f =
@@ -138,6 +152,13 @@ let map3 n1 n2 n3 ~f =
     Node.add_dependency n3 (fun x3 -> Node.recompute d);
     d
 
+let bind3 n1 n2 n3 ~f =
+    let b = f (read_exn n1) (read_exn n2) (read_exn n3) in
+    Node.add_dependency n1 (fun x -> let b1 = f (read_exn n1) (read_exn n2) (read_exn n3) in Node.update_entire_node b b1);
+    Node.add_dependency n2 (fun x -> let b1 = f (read_exn n1) (read_exn n2) (read_exn n3) in Node.update_entire_node b b1);
+    Node.add_dependency n3 (fun x -> let b1 = f (read_exn n1) (read_exn n2) (read_exn n3) in Node.update_entire_node b b1);
+    b
+
 (** Map four argument function over four nodes *)
 let map4 n1 n2 n3 n4 ~f =
     let e = Node.create (Kind.Map4 (f, n1, n2, n3, n4)) () in
@@ -146,6 +167,14 @@ let map4 n1 n2 n3 n4 ~f =
     Node.add_dependency n3 (fun x3 -> Node.recompute e);
     Node.add_dependency n4 (fun x4 -> Node.recompute e);
     e
+
+let bind4 n1 n2 n3 n4 ~f =
+    let b = f (read_exn n1) (read_exn n2) (read_exn n3) (read_exn n4) in
+    Node.add_dependency n1 (fun x -> let b1 = f (read_exn n1) (read_exn n2) (read_exn n3) (read_exn n4) in Node.update_entire_node b b1);
+    Node.add_dependency n2 (fun x -> let b1 = f (read_exn n1) (read_exn n2) (read_exn n3) (read_exn n4) in Node.update_entire_node b b1);
+    Node.add_dependency n3 (fun x -> let b1 = f (read_exn n1) (read_exn n2) (read_exn n3) (read_exn n4) in Node.update_entire_node b b1);
+    Node.add_dependency n4 (fun x -> let b1 = f (read_exn n1) (read_exn n2) (read_exn n3) (read_exn n4) in Node.update_entire_node b b1);
+    b
 
 let unordered_list_fold ~f ~f_inv ~init l = 
     let r = Node.create (Kind.Unordered_list_fold (f,f_inv,init,l)) () in

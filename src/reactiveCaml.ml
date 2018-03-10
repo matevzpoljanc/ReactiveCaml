@@ -8,6 +8,7 @@ let set_value = DynamicDependencyGraph.set_value
 let return = DynamicDependencyGraph.return
 let make_variable = DynamicDependencyGraph.make_variable
 let map = DynamicDependencyGraph.map
+let bind = DynamicDependencyGraph.bind
 let map2 = DynamicDependencyGraph.map2
 let map3 = DynamicDependencyGraph.map3
 let map4 = DynamicDependencyGraph.map4
