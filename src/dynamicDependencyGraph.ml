@@ -7,6 +7,7 @@ module rec Kind : sig
     | Map2: ('a0 -> 'a1 -> 'a) * 'a0 Node.t * 'a1 Node.t -> 'a t
     | Map3: ('a0 -> 'a1 -> 'a2 -> 'a) * 'a0 Node.t * 'a1 Node.t * 'a2 Node.t -> 'a t
     | Map4: ('a0 -> 'a1 -> 'a2 -> 'a3 -> 'a) * 'a0 Node.t * 'a1 Node.t * 'a2 Node.t * 'a3 Node.t -> 'a t
+    | If_then_else: bool Node.t * 'a0 Node.t * ('a0 -> 'a) * ('a0 -> 'a) -> 'a t
     | Unordered_list_fold: ('a -> 'a0 -> 'a) * ('a -> 'a0 -> 'a) * 'a Node.t * ('a0 Node.t list) -> 'a t
     
     val value: 'a t -> 'a
@@ -19,6 +20,7 @@ end = struct
     | Map2: ('a0 -> 'a1 -> 'a) * 'a0 Node.t * 'a1 Node.t -> 'a t
     | Map3: ('a0 -> 'a1 -> 'a2 -> 'a) * 'a0 Node.t * 'a1 Node.t * 'a2 Node.t -> 'a t
     | Map4: ('a0 -> 'a1 -> 'a2 -> 'a3 -> 'a) * 'a0 Node.t * 'a1 Node.t * 'a2 Node.t * 'a3 Node.t -> 'a t
+    | If_then_else: bool Node.t * 'a0 Node.t * ('a0 -> 'a) * ('a0 -> 'a) -> 'a t
     | Unordered_list_fold: ('a -> 'a0 -> 'a) * ('a -> 'a0 -> 'a) * 'a Node.t * ('a0 Node.t list) -> 'a t 
     
     (** Function is called whenever node recomputes *)
@@ -29,6 +31,7 @@ end = struct
         | Map2 (f, n1, n2) -> f (Node.read_exn n1) (Node.read_exn n2)
         | Map3 (f, n1, n2, n3) -> f (Node.read_exn n1) (Node.read_exn n2) (Node.read_exn n3)
         | Map4 (f, n1, n2, n3, n4) -> f (Node.read_exn n1) (Node.read_exn n2) (Node.read_exn n3) (Node.read_exn n4)
+        | If_then_else (b, d, t, f) -> if Node.read_exn b then t (Node.read_exn d) else f (Node.read_exn d)
         | Unordered_list_fold (f, f_inv, init, l) -> List.fold_left f (Node.read_exn init) @@ List.map (Node.read_exn) l
     
     exception NodeNotListFold
@@ -142,3 +145,9 @@ let unordered_list_fold ~f ~f_inv ~init l =
     Node.add_dependency init (fun x1 -> Node.recompute r);
     List.iter (fun n -> Node.add_dependency n (fun (old,new_v) -> Node.recompute_fold r ~old ~new_v)) l;
     r
+
+let if_then_else b n1 ~if_true ~if_false =
+    let c = Node.create (Kind.If_then_else (b, n1, if_true, if_false)) () in
+    Node.add_dependency b (fun x -> Node.recompute c);
+    Node.add_dependency n1 (fun x -> Node.recompute c);
+    c

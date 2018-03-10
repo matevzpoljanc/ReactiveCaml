@@ -13,3 +13,5 @@ val map3: 'a t -> 'b t -> 'c t -> f:('a -> 'b -> 'c -> 'd) -> 'd t
 val map4: 'a t -> 'b t -> 'c t -> 'd t -> f:('a -> 'b -> 'c -> 'd -> 'e) -> 'e t
 
 val unordered_list_fold: f:('a -> 'b -> 'a) -> f_inv:('a -> 'b -> 'a) -> init:('a t) -> (('b t) list) -> 'a t
+
+val if_then_else: bool t -> 'a t -> if_true:('a -> 'b) -> if_false:('a -> 'b) -> 'b t

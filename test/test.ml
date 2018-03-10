@@ -26,6 +26,9 @@ let test_list_fold_chngX1 test_ctx = test_init (); set_value x1 213; assert_equa
 let test_list_fold_chngX2 test_ctx = test_init (); set_value x2 120; assert_equal (7+8+120+1+2) (read_exn list_sum)
 let test_list_fold_chngX3 test_ctx = test_init (); set_value x3 (-78); assert_equal (7+8+9-78+2) (read_exn list_sum)
 let test_list_fold_chngX4 test_ctx = test_init (); set_value x4 (-4); assert_equal (7+8+9+1-4) (read_exn list_sum)
+
+let b = map x0 ~f:(fun x -> x=0)
+let test_if_then_else test_ctx = test_init (); set_value x0 0 ; assert_equal 0 @@ read_exn @@ if_then_else b x0 ~if_true:(fun x -> 0) ~if_false:(fun x -> 100/x)
 let suite = 
     "suite" >:::
     [
@@ -39,7 +42,8 @@ let suite =
         "test_list_fold_chngX1" >:: test_list_fold_chngX1;
         "test_list_fold_chngX2" >:: test_list_fold_chngX2;
         "test_list_fold_chngX3" >:: test_list_fold_chngX3;
-        "test_list_fold_chngX4" >:: test_list_fold_chngX4
+        "test_list_fold_chngX4" >:: test_list_fold_chngX4;
+        "test_if_then_else" >:: test_if_then_else
     ]
 
 let benchmark_function ~f ~args =
@@ -61,6 +65,5 @@ let benchmark_function ~f ~args =
 
 
 let () =
-    benchmark_function ~f:(fun n -> set_value x0 (Random.int 1000); read_exn result) ~args:[1];
     test_init ();
     run_test_tt_main suite
