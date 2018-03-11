@@ -50,7 +50,7 @@ and Node: sig
     val read: 'a t -> 'a option
     val read_exn: 'a t -> 'a
     val write: 'a t -> 'a -> unit
-    val add_dependency: 'a t -> ('a * 'a -> unit) -> unit
+    val add_dependency: ?update_last:bool -> 'a t -> ('a * 'a -> unit) -> unit
     val recompute: 'a t -> unit
     val recompute_fold: 'a t -> old: 'b -> new_v: 'b -> unit
 end = struct 
@@ -87,7 +87,12 @@ end = struct
             List.iter (fun f -> f (old_value, v)) t.dependencies
 
     (** Add new dependency for a node. Dependency is a function which when called recomputes some other node *)
-    let add_dependency t dep = t.dependencies <- dep::t.dependencies
+    let add_dependency ?(update_last = false) t dep = 
+        if update_last then
+            t.dependencies <- t.dependencies @ [dep]
+        else
+            t.dependencies <- dep::t.dependencies
+            
     (** Function used to recompute and update current node's value *)
     let recompute t =
         write t @@ Kind.value t.kind
@@ -149,5 +154,5 @@ let unordered_list_fold ~f ~f_inv ~init l =
 let if_then_else b n1 ~if_true ~if_false =
     let c = Node.create (Kind.If_then_else (b, n1, if_true, if_false)) () in
     Node.add_dependency b (fun x -> Node.recompute c);
-    Node.add_dependency n1 (fun x -> Node.recompute c);
+    Node.add_dependency ~update_last:(true) n1 (fun x -> Node.recompute c);
     c
