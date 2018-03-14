@@ -12,7 +12,7 @@ let sum2 = map2 x3 x4 (fun x y -> x + y)
 let result = map2 sum2 sum3 ~f:(fun x y -> x*y)
 let print_int_t t = print_endline @@ string_of_int @@ read_exn @@ t
 let list_sum = let l = [x0; x1; x2; x3; x4] in
-    unordered_list_fold ~f:(+) ~f_inv:(-) ~init:(return 0) l
+    unordered_list_foldl ~f:(+) ~f_inv:(-) ~init:(return 0) l
 let test_init () = set_value x0 7; set_value x1 8; set_value x2 9; set_value x3 1; set_value x4 2
 
 let test_sum3 test_ctx = assert_equal 24 (read_exn sum3)

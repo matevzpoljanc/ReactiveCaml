@@ -10,5 +10,5 @@ let map = DynamicDependencyGraph.map
 let map2 = DynamicDependencyGraph.map2
 let map3 = DynamicDependencyGraph.map3
 let map4 = DynamicDependencyGraph.map4
-let unordered_list_fold = DynamicDependencyGraph.unordered_list_fold
+let unordered_list_foldl = DynamicDependencyGraph.unordered_list_foldl
 let if_then_else = DynamicDependencyGraph.if_then_else

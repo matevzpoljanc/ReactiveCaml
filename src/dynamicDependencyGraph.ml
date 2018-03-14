@@ -113,11 +113,7 @@ end = struct
             update_value t v;
             List.iter (fun f -> f (old_value, v)) t.dependencies
 
-    let write_exn t v =
-        let old_value = read_exn t in
-        if old_value != v then
-            update_value t (Value v);
-            List.iter (fun f -> f (Value old_value, Value v)) t.dependencies
+    let write_exn t v = write t (Value v)
 
     (** Add new dependency for a node. Dependency is a function which when called recomputes some other node *)
     let add_dependency ?(update_last = false) t dep = 
@@ -151,42 +147,42 @@ let make_variable v = return v
 (** Map a function over a node *)
 let map n1 ~f = 
     let b = Node.create (Kind.Map (f,n1)) () in
-    Node.add_dependency n1 (fun x1 -> Node.recompute b);
+    Node.add_dependency n1 (fun _ -> Node.recompute b);
     b
 
 (** Map two argument function over two nodes *)
 let map2 n1 n2 ~f = 
     let c = Node.create (Kind.Map2 (f, n1, n2)) () in
-    Node.add_dependency n1 (fun x1 -> Node.recompute c);
-    Node.add_dependency n2 (fun x2 -> Node.recompute c);
+    Node.add_dependency n1 (fun _ -> Node.recompute c);
+    Node.add_dependency n2 (fun _ -> Node.recompute c);
     c
 
 (** Map three argument function over three nodes *)
 let map3 n1 n2 n3 ~f =
     let d = Node.create (Kind.Map3 (f, n1, n2, n3)) () in
-    Node.add_dependency n1 (fun x1 -> Node.recompute d);
-    Node.add_dependency n2 (fun x2 -> Node.recompute d);
-    Node.add_dependency n3 (fun x3 -> Node.recompute d);
+    Node.add_dependency n1 (fun _ -> Node.recompute d);
+    Node.add_dependency n2 (fun _ -> Node.recompute d);
+    Node.add_dependency n3 (fun _ -> Node.recompute d);
     d
 
 (** Map four argument function over four nodes *)
 let map4 n1 n2 n3 n4 ~f =
     let e = Node.create (Kind.Map4 (f, n1, n2, n3, n4)) () in
-    Node.add_dependency n1 (fun x1 -> Node.recompute e);
-    Node.add_dependency n2 (fun x2 -> Node.recompute e);
-    Node.add_dependency n3 (fun x3 -> Node.recompute e);
-    Node.add_dependency n4 (fun x4 -> Node.recompute e);
+    Node.add_dependency n1 (fun _ -> Node.recompute e);
+    Node.add_dependency n2 (fun _ -> Node.recompute e);
+    Node.add_dependency n3 (fun _ -> Node.recompute e);
+    Node.add_dependency n4 (fun _ -> Node.recompute e);
     e
 
-let unordered_list_fold ~f ~f_inv ~init l = 
+let unordered_list_foldl ~f ~f_inv ~init l = 
     let r = Node.create (Kind.Unordered_list_fold (f,f_inv,init,l)) () in
-    Node.add_dependency init (fun x1 -> Node.recompute r);
+    Node.add_dependency init (fun _ -> Node.recompute r);
     List.iter (fun n -> Node.add_dependency n (fun (old,new_v) -> Node.recompute_fold r ~old ~new_v)) l;
     r
 
 let if_then_else b ~if_true ~if_false =
     let c = Node.create (Kind.If_then_else (b, if_true, if_false)) () in
-    Node.add_dependency b (fun x -> Node.recompute c);
-    Node.add_dependency ~update_last:(true) if_true (fun x -> Node.recompute c);
-    Node.add_dependency ~update_last:(true) if_false (fun x -> Node.recompute c);
+    Node.add_dependency b (fun _ -> Node.recompute c);
+    Node.add_dependency ~update_last:(true) if_true (fun _ -> Node.recompute c);
+    Node.add_dependency ~update_last:(true) if_false (fun _ -> Node.recompute c);
     c
